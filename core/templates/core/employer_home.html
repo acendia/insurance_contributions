@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Employer Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- Unique & Interesting Debt Summary Cards -->
+    <style>
+        :root {
+            --debt-primary: #2563eb;
+            --debt-danger: #dc2626;
+            --debt-warning: #ca8a04;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.06);
+            --card-radius: 20px;
+        }
+
+        body {
+            background-color: #f8fafc;
+            color: #1e293b;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        .modern-card {
+            border-radius: var(--card-radius);
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 1.75rem;
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--card-shadow);
+        }
+
+        .modern-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.1);
+        }
+
+        /* Gradient Borders / Highlights for cards */
+        .modern-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: var(--card-radius);
+            padding: 1.5px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.1));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        .icon-circle {
+            width: 54px;
+            height: 54px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.25rem;
+            transition: all 0.2s ease;
+        }
+
+        .card-blue .icon-circle {
+            background-color: #eff6ff;
+            color: #2563eb;
+        }
+
+        .card-red .icon-circle {
+            background-color: #fef2f2;
+            color: #dc2626;
+        }
+
+        .card-yellow .icon-circle {
+            background-color: #fefce8;
+            color: #ca8a04;
+        }
+
+        .card-neutral .icon-circle {
+            background-color: #f1f5f9;
+            color: #64748b;
+        }
+
+        .modern-card:hover .icon-circle {
+            transform: scale(1.08);
+        }
+
+        .card-title-modern {
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-value-modern {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+            line-height: 1;
+        }
+
+        .card-blue .card-value-modern {
+            color: #1e3a8a;
+        }
+
+        .card-red .card-value-modern {
+            color: #7f1d1d;
+        }
+
+        .card-yellow .card-value-modern {
+            color: #854d0e;
+        }
+
+        .explore-link {
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: gap 0.2s;
+        }
+
+        .card-blue .explore-link {
+            color: var(--debt-primary);
+        }
+
+        .card-red .explore-link {
+            color: var(--debt-danger);
+        }
+
+        .card-yellow .explore-link {
+            color: var(--debt-warning);
+        }
+
+        .explore-link:hover {
+            gap: 0.6rem;
+            text-decoration: underline;
+        }
+
+        /* Custom Action Buttons */
+        .btn-modern {
+            border-radius: 12px;
+            padding: 0.65rem 1.25rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .btn-modern-primary {
+            background: #2563eb;
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-modern-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+            color: white;
+        }
+
+        .btn-modern-outline {
+            background: white;
+            border-color: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-modern-outline:hover {
+            border-color: #2563eb;
+            color: #2563eb;
+            background: #f8fbff;
+        }
+
+        /* Quick Actions Grid */
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .quick-actions-grid .btn-modern {
+            justify-content: center;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Activity List Styling */
+        .activity-item {
+            padding: 1rem 0;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-label {
+            font-weight: 500;
+            color: #334155;
+        }
+
+        .activity-date {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+    </style>
+
+    <div class="py-2">
+        <!-- Header Section -->
+        <div class="d-flex justify-content-between align-items-end mb-5">
+            <div>
+                <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill mb-2">Employer
+                    Panel</span>
+                <h1 class="display-6 fw-bold mb-1">Welcome, 
+                </h1>
+                <p class="text-muted mb-0">
+                    <strong class="text-dark">{{ company_name }}</strong>
+                </p>
+                <div class="d-flex gap-3 text-muted small mt-1">
+                    <span><i class="bi bi-tag me-1"></i>TAX ID: <strong>{{ tax_id }}</strong></span>
+                    <span><i class="bi bi-hash me-1"></i>AME: <strong>{{ ame }}</strong></span>
+                </div>
+                <div class="d-flex gap-3 text-muted small mt-1">
+                    <span><i class="bi bi-geo-alt me-1"></i>{{ address }}</span>
+                    <span><i class="bi bi-calendar3 me-1"></i>Period: <strong>{{ current_period }}</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Debt Summary Section -->
+        <div class="row mb-5">
+            <div class="col-md-4 mb-4">
+                <div class="modern-card card-blue h-100">
+                    <div class="icon-circle">
+                        <i class="bi bi-wallet2"></i>
+                    </div>
+                    <div class="card-title-modern">Current Obligations</div>
+                    <div class="card-value-modern">{{ debts.current|floatformat:2 }}€</div>
+                    <a href="{% url 'current_obligations' %}" class="explore-link" target="_blank">
+                        View Statement <i class="bi bi-arrow-right-short"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-4">
+                <div class="modern-card card-yellow h-100">
+                    <div class="icon-circle">
+                        <i class="bi bi-file-earmark-check"></i>
+                    </div>
+                    <div class="card-title-modern">Settled Overdue (KEAO)</div>
+                    <div class="card-value-modern">{{ debts.overdue_keao_settled|floatformat:2 }}€</div>
+                    <a href="{% url 'settled_overdue' %}" class="explore-link">
+                        Check plan <i class="bi bi-arrow-right-short"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-4">
+                <div class="modern-card card-red h-100">
+                    <div class="icon-circle">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                    <div class="card-title-modern">Unsettled Overdue (KEAO)</div>
+                    <div class="card-value-modern">{{ debts.overdue_keao_unsettled|floatformat:2 }}€</div>
+                    <a href="{% url 'unsettled_overdue' %}" class="explore-link">
+                        Take Action <i class="bi bi-arrow-right-short"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Quick Actions -->
+            <div class="col-lg-7 mb-4">
+                <div class="modern-card h-100 card-neutral">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="icon-circle mb-0 me-3">
+                            <i class="bi bi-lightning-charge"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0 fw-bold">Quick Actions</h5>
+                            <p class="text-muted small mb-0">Common tasks and tools</p>
+                        </div>
+                    </div>
+
+                    <div class="quick-actions-grid">
+                        <a href="{% url 'apd_submission' %}" class="btn btn-modern btn-modern-outline w-100">
+                            <i class="bi bi-file-earmark-arrow-up me-2"></i>Submit APD
+                        </a>
+                        <a href="{% url 'payments' %}" class="btn btn-modern btn-modern-outline w-100">
+                            <i class="bi bi-credit-card me-2"></i>View Payments
+                        </a>
+                        <a href="{% url 'employees_list' %}" class="btn btn-modern btn-modern-outline w-100">
+                            <i class="bi bi-people me-2"></i>Employees
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="col-lg-5 mb-4">
+                <div class="modern-card h-100 card-neutral">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="icon-circle mb-0 me-3">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0 fw-bold">Recent Activity</h5>
+                            <p class="text-muted small mb-0">Latest updates and logs</p>
+                        </div>
+                    </div>
+
+                    {% if recent_actions %}
+                    {% for item in recent_actions %}
+                    <div class="activity-item">
+                        <span class="activity-label">{{ item.label }}</span>
+                        <span class="activity-date">{{ item.date|date:"d/m/Y" }}</span>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-inbox text-muted display-6"></i>
+                        <p class="text-muted mt-2">No recent activity yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

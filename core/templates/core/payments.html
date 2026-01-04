@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Payments" %} - {{ company_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'employer_home' %}" class="text-decoration-none">Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Payments" %}</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="display-6 fw-bold mb-1">{% trans "Payment Management" %}</h1>
+            <p class="text-muted mb-0">{% trans "Review balances and settle obligations for" %} <strong class="text-dark">{{ company_name }}</strong></p>
+        </div>
+        <div>
+            <button class="btn btn-outline-primary rounded-pill px-4">
+                <i class="bi bi-file-earmark-text me-2"></i>{% trans "Payment Reports" %}
+            </button>
+        </div>
+    </div>
+
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.06);
+            padding: 2rem;
+            height: 100%;
+        }
+        .balance-item {
+            padding: 1rem;
+            border-radius: 12px;
+            background: #fff;
+            border: 1px solid #f1f5f9;
+            margin-bottom: 1rem;
+            transition: transform 0.2s;
+        }
+        .balance-item:hover {
+            transform: translateX(5px);
+            border-color: #3b82f6;
+        }
+        .table-modern {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 0.5rem;
+        }
+        .table-modern tbody tr {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .table-modern td, .table-modern th {
+            padding: 1rem;
+            vertical-align: middle;
+        }
+    </style>
+
+    <div class="row g-4">
+        <!-- Balances Summary -->
+        <div class="col-12">
+            <div class="glass-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="fw-bold mb-0">{% trans "Outstanding Balances" %}</h4>
+                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
+                        <i class="bi bi-info-circle me-1"></i> {% trans "Summary of all existing obligations" %}
+                    </span>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="balance-item d-flex justify-content-between align-items-center mb-0">
+                            <div>
+                                <div class="small text-muted text-uppercase fw-bold">Current Obligations</div>
+                                <div class="h4 mb-0 fw-bold text-primary">{{ debts.current|floatformat:2 }}€</div>
+                            </div>
+                            <i class="bi bi-wallet2 fs-2 text-primary opacity-25"></i>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="balance-item d-flex justify-content-between align-items-center mb-0">
+                            <div>
+                                <div class="small text-muted text-uppercase fw-bold">Settled Overdue</div>
+                                <div class="h4 mb-0 fw-bold text-warning">{{ debts.overdue_keao_settled|floatformat:2 }}€</div>
+                            </div>
+                            <i class="bi bi-file-earmark-check fs-2 text-warning opacity-25"></i>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="balance-item d-flex justify-content-between align-items-center mb-0">
+                            <div>
+                                <div class="small text-muted text-uppercase fw-bold">Unsettled Overdue</div>
+                                <div class="h4 mb-0 fw-bold text-danger">{{ debts.overdue_keao_unsettled|floatformat:2 }}€</div>
+                            </div>
+                            <i class="bi bi-exclamation-triangle fs-2 text-danger opacity-25"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="d-flex justify-content-end align-items-center gap-3">
+                    <span class="h5 fw-bold mb-0 text-muted">Total Payable Balance:</span>
+                    <span class="h3 fw-bold mb-0 text-dark">{{ debts.total|floatformat:2 }}€</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment History -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="glass-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="fw-bold mb-0">{% trans "Payment History" %}</h4>
+                    <select class="form-select w-auto border-0 bg-light shadow-none">
+                        <option>Last 6 Months</option>
+                        <option>2023</option>
+                        <option>2022</option>
+                    </select>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table-modern">
+                        <thead>
+                            <tr class="text-muted small text-uppercase">
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Reference (RF)</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pay in payment_history %}
+                            <tr>
+                                <td>{{ pay.date }}</td>
+                                <td>
+                                    <div class="fw-bold">{{ pay.type }}</div>
+                                </td>
+                                <td><code class="text-primary">{{ pay.reference }}</code></td>
+                                <td class="fw-bold">{{ pay.amount|floatformat:2 }}€</td>
+                                <td>
+                                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">{{ pay.status }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-light rounded-circle p-2">
+                                        <i class="bi bi-download"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card-radio input:checked + label {
+        border-color: #2563eb !important;
+        background-color: #eff6ff !important;
+        color: #2563eb !important;
+    }
+    .cursor-pointer {
+        cursor: pointer;
+    }
+</style>
+{% endblock %}

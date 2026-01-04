@@ -27,8 +27,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-LOGIN_REDIRECT_URL = 'client_home'
+LOGIN_REDIRECT_URL = 'post_login'
 LOGIN_URL = 'login'
+LOGOUT_REDIRECT_URL = 'login'
 
 
 # Application definition

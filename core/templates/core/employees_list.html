@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Active Employees" %} - {{ company_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'employer_home' %}" class="text-decoration-none">Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Employees</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="display-6 fw-bold mb-1">{% trans "Active Employees" %}</h1>
+            <p class="text-muted mb-0">{% trans "Managing personnel for" %} <strong class="text-dark">{{ company_name }}</strong></p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary rounded-pill px-4">
+                <i class="bi bi-person-plus me-2"></i>{% trans "Add Employee" %}
+            </button>
+            <button class="btn btn-primary rounded-pill px-4">
+                <i class="bi bi-download me-2"></i>{% trans "Export List" %}
+            </button>
+        </div>
+    </div>
+
+    <!-- Employees Glass Card -->
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.06);
+            padding: 2rem;
+        }
+        .table-modern {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 0.75rem;
+        }
+        .table-modern thead th {
+            border: none;
+            padding: 1rem;
+            color: #64748b;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+        }
+        .table-modern tbody tr {
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: all 0.2s;
+            border-radius: 12px;
+        }
+        .table-modern tbody tr:hover {
+            transform: scale(1.005);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .table-modern tbody td {
+            padding: 1.25rem 1rem;
+            border: none;
+        }
+        .table-modern tbody td:first-child {
+            border-top-left-radius: 12px;
+            border-bottom-left-radius: 12px;
+        }
+        .table-modern tbody td:last-child {
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+        .employee-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: #eff6ff;
+            color: #2563eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+    </style>
+
+    <div class="glass-card">
+        {% if employees %}
+        <div class="table-responsive">
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th style="width: 45%;">Employee</th>
+                        <th style="width: 20%;">AMKA</th>
+                        <th style="width: 20%;">Hired Date</th>
+                        <th style="width: 15%;" class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp in employees %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="employee-avatar">
+                                    {{ emp.name|slice:":1" }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">{{ emp.name }}</div>
+                                    <div class="small text-muted">ID: #{{ emp.id }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <code class="bg-light text-primary px-2 py-1 rounded small fw-bold">{{ emp.amka }}</code>
+                        </td>
+                        <td>
+                            <div class="text-muted small">
+                                <i class="bi bi-calendar-check me-2"></i>{{ emp.start_date|date:"d/m/Y" }}
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-light rounded-circle p-2 view-profile-btn" 
+                                    data-bs-toggle="modal" data-bs-target="#employeeProfileModal"
+                                    data-name="{{ emp.name }}" 
+                                    data-id="{{ emp.id }}" 
+                                    data-amka="{{ emp.amka }}" 
+                                    data-joined="{{ emp.start_date|date:'d/m/Y' }}">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-light rounded-circle p-2 ms-1 view-history-btn" 
+                                    data-bs-toggle="modal" data-bs-target="#historyModal"
+                                    data-name="{{ emp.name }}">
+                                <i class="bi bi-clock-history"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-people text-muted display-1 mb-3"></i>
+            <h4 class="text-muted">No active employees found</h4>
+            <p class="text-muted">Start by adding your first employee to the registry.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Employee Profile Modal -->
+    <div class="modal fade" id="employeeProfileModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                <div class="modal-header border-0 bg-primary bg-gradient text-white p-4">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-person-lines-fill me-2"></i>{% trans "Employee Profile" %}
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="text-center p-5 bg-light">
+                        <div class="mx-auto bg-white shadow-sm rounded-circle d-flex align-items-center justify-content-center mb-3" 
+                             style="width: 100px; height: 100px; font-size: 2.5rem; font-weight: bold; color: #3b82f6;"
+                             id="profile-avatar">
+                            <!-- Content populated asynchronously via JavaScript -->
+                        </div>
+                        <h4 class="fw-bold mb-1" id="profile-name"></h4>
+                        <div class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fw-bold" id="profile-id"></div>
+                    </div>
+                    <div class="p-4">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="p-3 border rounded-3 bg-light h-100">
+                                    <label class="small text-muted text-uppercase fw-bold mb-1">AMKA</label>
+                                    <div class="fw-bold text-dark fs-5" id="profile-amka"></div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-3 border rounded-3 bg-light h-100">
+                                    <label class="small text-muted text-uppercase fw-bold mb-1">Hired Date</label>
+                                    <div class="fw-bold text-dark fs-5" id="profile-joined"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alert alert-info d-flex align-items-center mt-3 mb-0" role="alert">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            <div>
+                                {% trans "This employee is currently active." %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-3 bg-light">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">{% trans "Close" %}</button>
+                    <!-- Valid link could go here later -->
+                    <button type="button" class="btn btn-primary rounded-pill px-4">{% trans "Edit Profile" %}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Confirmation Modal -->
+    <div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow" style="border-radius: 20px;">
+                <div class="modal-body p-5 text-center">
+                    <div class="mb-4 text-primary bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <i class="bi bi-clock-history fs-1"></i>
+                    </div>
+                    <h4 class="fw-bold mb-2">{% trans "View Contribution History" %}</h4>
+                    <p class="text-muted mb-4">
+                        {% trans "You are about to view the full contribution timeline for" %} <strong id="history-name-target" class="text-dark"></strong>.
+                    </p>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+                        <button type="button" class="btn btn-primary rounded-pill px-4" id="view-history-confirm-btn">
+                            {% trans "View Full History" %} <i class="bi bi-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Find profile modal el
+        const profileModalEl = document.getElementById('employeeProfileModal');
+        if (profileModalEl) {
+            profileModalEl.addEventListener('show.bs.modal', function(event) {
+                const btn = event.relatedTarget;
+                const name = btn.getAttribute('data-name');
+                const id = btn.getAttribute('data-id');
+                const amka = btn.getAttribute('data-amka');
+                const joined = btn.getAttribute('data-joined');
+
+                // Update content
+                profileModalEl.querySelector('#profile-name').textContent = name;
+                profileModalEl.querySelector('#profile-id').textContent = 'ID: #' + id;
+                profileModalEl.querySelector('#profile-amka').textContent = amka;
+                profileModalEl.querySelector('#profile-joined').textContent = joined;
+                profileModalEl.querySelector('#profile-avatar').textContent = name.charAt(0).toUpperCase();
+            });
+        }
+
+        // Find history modal el
+        const historyModalEl = document.getElementById('historyModal');
+        if (historyModalEl) {
+            historyModalEl.addEventListener('show.bs.modal', function(event) {
+                const btn = event.relatedTarget;
+                const name = btn.getAttribute('data-name');
+                historyModalEl.querySelector('#history-name-target').textContent = name;
+                // Since we don't have a direct link for EMP to view specific INS history yet,
+                // Future development: Integrate with full employee profile search module
+                // Logging action for debugging purposes
+            });
+        }
+    });
+</script>
+{% endblock %}

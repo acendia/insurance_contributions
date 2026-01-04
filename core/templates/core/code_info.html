@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}
+    {% if info_type == 'kad' %}{% trans "KAD Lookup" %}
+    {% elif info_type == 'eid' %}{% trans "Specialty Lookup" %}
+    {% elif info_type == 'kpk' %}{% trans "Coverage Package Lookup" %}
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.85);
+        --glass-border: rgba(255, 255, 255, 0.4);
+        --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.06);
+        --card-radius: 20px;
+    }
+
+    body {
+        background-color: #f8fafc;
+    }
+
+    .modern-card {
+        border-radius: var(--card-radius);
+        border: 1px solid var(--glass-border);
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        padding: 2rem;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 2rem;
+    }
+
+    .appropriate-row {
+        background-color: rgba(16, 185, 129, 0.05) !important;
+        border-left: 4px solid #10b981 !important;
+    }
+
+    .inappropriate-row {
+        background-color: rgba(239, 68, 68, 0.03) !important;
+        border-left: 4px solid #ef4444 !important;
+        opacity: 0.7;
+    }
+
+    .appropriate-badge {
+        background: #d1fae5;
+        color: #065f46;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .inappropriate-badge {
+        background: #fee2e2;
+        color: #991b1b;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .info-header {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        color: white;
+        padding: 3rem 0;
+        margin-bottom: -2rem;
+        border-radius: 0 0 2rem 2rem;
+    }
+
+    .search-container {
+        position: sticky;
+        top: 1rem;
+        z-index: 100;
+    }
+
+    .code-table th {
+        background: #f1f5f9;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        border: none;
+        padding: 1rem;
+    }
+
+    .code-table td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="info-header mb-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-8">
+                <h1 class="display-5 fw-bold mb-2">
+                    {% if info_type == 'kad' %}{% trans "Activity Codes (KAD)" %}
+                    {% elif info_type == 'eid' %}{% trans "Specialty Codes" %}
+                    {% elif info_type == 'kpk' %}{% trans "Coverage Packages" %}
+                    {% endif %}
+                </h1>
+                <p class="lead opacity-75 mb-0">{% trans "Reference guide for insurance filing" %}</p>
+            </div>
+            <div class="col-4 text-end">
+                <button class="btn btn-outline-light rounded-pill" onclick="window.close()">
+                    <i class="bi bi-x-lg me-2"></i>{% trans "Close Window" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    {% if has_filter %}
+    <div class="modern-card border-primary bg-primary bg-opacity-10 mb-4">
+        <div class="d-flex align-items-center">
+            <div class="flex-shrink-0">
+                <i class="bi bi-filter-circle-fill text-primary display-6"></i>
+            </div>
+            <div class="ms-4">
+                <h5 class="fw-bold mb-1">{% trans "Active Filtering Applied" %}</h5>
+                <p class="mb-0 text-muted">
+                    {% trans "Showing appropriate codes based on your current selection:" %}
+                    <strong>
+                        {% if kad_filter %} KAD: {{ kad_filter }} {% endif %}
+                        {% if eid_filter %} | Specialty: {{ eid_filter }} {% endif %}
+                        {% if kpk_filter %} | Coverage: {{ kpk_filter }} {% endif %}
+                    </strong>
+                </p>
+                <div class="mt-2">
+                    <span class="me-3"><i class="bi bi-circle-fill text-success small me-1"></i> {% trans "Green: Highly appropriate" %}</span>
+                    <span><i class="bi bi-circle-fill text-danger small me-1"></i> {% trans "Red: Inappropriate for this combination" %}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="modern-card">
+        <div class="table-responsive">
+            <table class="table table-hover code-table mb-0">
+                <thead>
+                    <tr>
+                        <th width="150">{% trans "Code" %}</th>
+                        <th>{% trans "Description" %}</th>
+                        {% if has_filter %}
+                        <th width="150" class="text-center">{% trans "Status" %}</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in codes %}
+                    <tr class="{% if has_filter %}{% if item.is_appropriate %}appropriate-row{% else %}inappropriate-row{% endif %}{% endif %}">
+                        <td class="fw-bold font-monospace">{{ item.code }}</td>
+                        <td class="text-dark">{{ item.description }}</td>
+                        {% if has_filter %}
+                        <td class="text-center">
+                            {% if item.is_appropriate %}
+                            <span class="appropriate-badge">{% trans "Appropriate" %}</span>
+                            {% else %}
+                            <span class="inappropriate-badge">{% trans "Inappropriate" %}</span>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center py-5 text-muted">
+                            <i class="bi bi-search display-1 d-block mb-3"></i>
+                            {% trans "No codes found." %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

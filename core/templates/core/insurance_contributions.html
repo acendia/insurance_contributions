@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Insurance Contributions" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.85);
+        --glass-border: rgba(255, 255, 255, 0.4);
+        --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.06);
+        --card-radius: 20px;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 400px;
+        width: 100%;
+        z-index: 2;
+    }
+
+    .modern-card {
+        border-radius: var(--card-radius);
+        border: 1px solid var(--glass-border);
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        padding: 1.75rem;
+        position: relative;
+        z-index: 1;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: var(--card-shadow);
+    }
+
+    .modern-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.1);
+    }
+
+    .modern-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-radius: var(--card-radius);
+        padding: 1.5px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.1));
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+    }
+
+    .icon-circle {
+        width: 54px;
+        height: 54px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1.25rem;
+        transition: all 0.2s ease;
+    }
+
+    .card-blue .icon-circle {
+        background-color: #eff6ff;
+        color: #2563eb;
+    }
+
+    .card-green .icon-circle {
+        background-color: #f0fdf4;
+        color: #16a34a;
+    }
+
+    .card-info .icon-circle {
+        background-color: #ecfeff;
+        color: #0891b2;
+    }
+
+    .card-title-modern {
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+    }
+
+    .card-value-modern {
+        font-size: 1.75rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin-bottom: 0;
+        line-height: 1.2;
+        color: #1e293b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+        <div>
+            <nav aria-label="breadcrumb" class="mb-2">
+                <ol class="breadcrumb mb-0 small uppercase fw-bold" style="letter-spacing: 0.05em;">
+                    <li class="breadcrumb-item"><a href="{% url 'insured_home' %}"
+                            class="text-decoration-none">Dashboard</a></li>
+                    <li class="breadcrumb-item active text-muted" aria-current="page">Contributions</li>
+                </ol>
+            </nav>
+            <h1 class="display-6 fw-bold mb-1">{% trans "Insurance Contributions" %}</h1>
+            <p class="text-muted mb-0">{% trans "Detailed history and future projections" %}</p>
+        </div>
+        <div>
+            <a href="{% url 'print_insurance_history' %}" target="_blank" class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm py-2" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border: none;">
+                <i class="bi bi-file-earmark-pdf-fill me-2"></i>{% trans "Download Full History (PDF)" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-5">
+        <div class="col-md-6 mb-4">
+            <div class="modern-card card-blue h-100">
+                <div class="icon-circle">
+                    <i class="bi bi-cash-coin"></i>
+                </div>
+                <div class="card-title-modern">
+                    {% if selected_year == 'all' %}{% trans "Total Contributions" %}{% else %}{% trans "Total Contributions" %} ({{ selected_year }}){% endif %}
+                </div>
+                <div class="card-value-modern">{{ summary_stats.ytd_total|floatformat:2 }} €</div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="modern-card card-green h-100">
+                <div class="icon-circle">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+                <div class="card-title-modern">
+                    {% if selected_year == 'all' %}{% trans "Total Gross Earnings" %}{% else %}{% trans "Total Gross Earnings" %} ({{ selected_year }}){% endif %}
+                </div>
+                <div class="card-value-modern">{{ summary_stats.ytd_gross|floatformat:2 }} €</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graph Section -->
+    <div class="card shadow-sm border-0 mb-5 p-4" style="border-radius: 12px; background: #fff;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="fw-bold mb-0">{% trans "Contribution Trends & Projections" %}</h5>
+            <form method="get" class="d-flex gap-2 align-items-center">
+                <label class="small fw-bold text-muted me-2">{% trans "Period:" %}</label>
+                <select name="year" class="form-select form-select-sm shadow-sm" onchange="this.form.submit()" style="width: auto; border-radius: 8px;">
+                    <option value="all" {% if selected_year == 'all' %}selected{% endif %}>{% trans "All Years" %}</option>
+                    {% for year in available_years %}
+                    <option value="{{ year }}" {% if selected_year == year|stringformat:'s' %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+        <div class="chart-container" style="position: relative; height: 400px; width: 100%;">
+            <canvas id="contributionsChart"></canvas>
+        </div>
+        <div class="mt-4 d-flex gap-4 small text-muted">
+            <div class="d-flex align-items-center">
+                <span class="badge rounded-circle p-1 me-2"
+                    style="background-color: #2563eb; width: 10px; height: 10px;">&nbsp;</span>
+                {% trans "Gross Earnings" %}
+            </div>
+            <div class="d-flex align-items-center">
+                <span class="badge rounded-circle p-1 me-2"
+                    style="background-color: #16a34a; width: 10px; height: 10px;">&nbsp;</span>
+                {% trans "Insurance Contributions" %}
+            </div>
+        </div>
+    </div>
+
+    <!-- History Table -->
+    <div class="modern-card">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="fw-bold mb-0">{% trans "Detailed Insurance History" %}</h5>
+            <div class="d-flex align-items-center gap-3">
+                <label class="small fw-bold text-muted mb-0">{% trans "Rows per page:" %}</label>
+                <select id="pageSizeSelect" class="form-select form-select-sm shadow-sm" style="width: auto; border-radius: 8px;">
+                    <option value="5" selected>5</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
+                    <option value="all">{% trans "All" %}</option>
+                </select>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                <thead class="text-muted small text-uppercase fw-bold"
+                    style="letter-spacing: 0.05em; background: #f8fafc;">
+                    <tr class="text-center">
+                        <th class="border-0 px-2 py-3">{% trans "From" %}</th>
+                        <th class="border-0 px-2 py-3">{% trans "To" %}</th>
+                        <th class="border-0 px-1 py-3">{% trans "Year" %}</th>
+                        <th class="border-0 px-1 py-3">{% trans "Month" %}</th>
+                        <th class="border-0 px-1 py-3">{% trans "Days" %}</th>
+                        <th class="border-0 px-2 py-3">{% trans "Type" %}</th>
+                        <th class="border-0 px-2 py-3">{% trans "Coverage" %}</th>
+                        <th class="border-0 px-2 py-3">{% trans "Gross" %}</th>
+                        <th class="border-0 px-2 py-3">{% trans "Contrib." %}</th>
+                        <th class="border-0 px-2 py-3">{% trans "AME" %}</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody" class="text-center">
+                    {% for item in contribution_history %}
+                    <tr>
+                        <td class="px-2 py-3 fw-semibold text-dark">{{ item.from }}</td>
+                        <td class="px-2 py-3 text-muted">{{ item.to }}</td>
+                        <td class="px-1 py-3 text-muted">{{ item.year }}</td>
+                        <td class="px-1 py-3 text-muted">{{ item.month }}</td>
+                        <td class="px-1 py-3 text-dark fw-semibold">{{ item.days }}</td>
+                        <td class="px-2 py-3 text-muted">
+                            <span
+                                title="{% if item.earnings_type == '01' %}{% trans 'Normal' %}{% elif item.earnings_type == '03' %}{% trans 'Christmas Bonus' %}{% elif item.earnings_type == '04' %}{% trans 'Easter Bonus' %}{% elif item.earnings_type == '05' %}{% trans 'Holiday Allowance' %}{% endif %}">
+                                {{ item.earnings_type }}
+                            </span>
+                        </td>
+                        <td class="px-2 py-3 text-muted">{{ item.coverage_package }}</td>
+                        <td class="px-2 py-3 fw-bold text-dark">{{ item.gross_earnings|floatformat:2 }} €</td>
+                        <td class="px-2 py-3 fw-bold text-primary">{{ item.total_contributions|floatformat:2 }} €</td>
+                        <td class="px-2 py-3 font-monospace small text-muted">{{ item.employer_ame }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+            <div class="small text-muted" id="paginationInfo">
+                {% trans "Showing" %} <span id="startRow">0</span> - <span id="endRow">0</span> {% trans "of" %} <span id="totalRows">0</span>
+            </div>
+            <nav aria-label="Table pagination">
+                <ul class="pagination pagination-sm mb-0 gap-1">
+                    <li class="page-item" id="prevPage">
+                        <a class="page-link rounded-pill border-0 px-3 shadow-sm" href="#" style="background: #f8fafc; color: #64748b; transition: all 0.2s;">
+                            <i class="bi bi-chevron-left me-1"></i> {% trans "Prev" %}
+                        </a>
+                    </li>
+                    <li class="page-item active">
+                        <span class="page-link rounded-circle border-0 shadow-sm mx-1" id="currentPageDisplay" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: #2563eb;">1</span>
+                    </li>
+                    <li class="page-item" id="nextPage">
+                        <a class="page-link rounded-pill border-0 px-3 shadow-sm" href="#" style="background: #f8fafc; color: #64748b; transition: all 0.2s;">
+                            {% trans "Next" %} <i class="bi bi-chevron-right ms-1"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var ctx = document.getElementById('contributionsChart').getContext('2d');
+        var chartLabels = {{ chart_data.labels|safe }};
+        var chartContributions = {{ chart_data.contributions|safe }};
+        var chartGross = {{ chart_data.gross|safe }};
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [
+                    {
+                        label: '{% trans "Gross Earnings" %}',
+                        data: chartGross,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#2563eb'
+                    },
+                    {
+                        label: '{% trans "Insurance Contributions" %}',
+                        data: chartContributions,
+                        borderColor: '#16a34a',
+                        backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#16a34a'
+                    }
+                ]
+            },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function (context) {
+                            var label = context.dataset.label || '';
+                            if (label) { label += ': '; }
+                            if (context.parsed.y !== null) {
+                                label += new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(context.parsed.y);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { drawBorder: false, color: 'rgba(0, 0, 0, 0.05)' },
+                    ticks: { callback: function (value) { return value + ' €'; } }
+                },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // 2. Pagination Logic
+    const tableBody = document.getElementById('historyTableBody');
+    const rows = Array.from(tableBody.getElementsByTagName('tr'));
+    const pageSizeSelect = document.getElementById('pageSizeSelect');
+    const prevBtn = document.getElementById('prevPage');
+    const nextBtn = document.getElementById('nextPage');
+    const pageDisplay = document.getElementById('currentPageDisplay');
+    const startRowEl = document.getElementById('startRow');
+    const endRowEl = document.getElementById('endRow');
+    const totalRowsEl = document.getElementById('totalRows');
+
+    let currentPage = 1;
+    let pageSize = parseInt(pageSizeSelect.value);
+
+    function updateTable() {
+        const totalRows = rows.length;
+        totalRowsEl.textContent = totalRows;
+
+        let currentSize = pageSize === -1 ? totalRows : pageSize;
+        const totalPages = Math.ceil(totalRows / currentSize) || 1;
+
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIdx = (currentPage - 1) * currentSize;
+        const endIdx = pageSize === -1 ? totalRows : Math.min(startIdx + currentSize, totalRows);
+
+        rows.forEach((row, index) => {
+            if (index >= startIdx && index < endIdx) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        startRowEl.textContent = totalRows === 0 ? 0 : startIdx + 1;
+        endRowEl.textContent = endIdx;
+        pageDisplay.textContent = currentPage;
+
+        // Button states
+        if (currentPage === 1) {
+            prevBtn.classList.add('disabled');
+            prevBtn.querySelector('a').style.opacity = '0.5';
+            prevBtn.querySelector('a').style.pointerEvents = 'none';
+        } else {
+            prevBtn.classList.remove('disabled');
+            prevBtn.querySelector('a').style.opacity = '1';
+            prevBtn.querySelector('a').style.pointerEvents = 'auto';
+        }
+
+        if (currentPage === totalPages || pageSize === -1) {
+            nextBtn.classList.add('disabled');
+            nextBtn.querySelector('a').style.opacity = '0.5';
+            nextBtn.querySelector('a').style.pointerEvents = 'none';
+        } else {
+            nextBtn.classList.remove('disabled');
+            nextBtn.querySelector('a').style.opacity = '1';
+            nextBtn.querySelector('a').style.pointerEvents = 'auto';
+        }
+    }
+
+    pageSizeSelect.addEventListener('change', function() {
+        pageSize = this.value === 'all' ? -1 : parseInt(this.value);
+        currentPage = 1;
+        updateTable();
+    });
+
+    prevBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (currentPage > 1) {
+            currentPage--;
+            updateTable();
+        }
+    });
+
+    nextBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const currentSize = pageSize === -1 ? rows.length : pageSize;
+        const totalPages = Math.ceil(rows.length / currentSize);
+        if (currentPage < totalPages && pageSize !== -1) {
+            currentPage++;
+            updateTable();
+        }
+    });
+
+    // Initialize table
+    updateTable();
+});
+</script>
+{% endblock %}

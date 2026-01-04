@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Update Profile" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.4);
+        --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.06);
+        --card-radius: 20px;
+    }
+
+    .modern-card {
+        border-radius: var(--card-radius);
+        border: 1px solid var(--glass-border);
+        background: var(--glass-bg);
+        box-shadow: var(--card-shadow);
+        padding: 2rem;
+    }
+
+    .form-control {
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        border: 1px solid #e2e8f0;
+        background-color: #f8fafc;
+    }
+
+    .form-control:focus {
+        background-color: #fff;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb mb-0 small uppercase fw-bold" style="letter-spacing: 0.05em;">
+                    <li class="breadcrumb-item"><a href="{% url 'insured_home' %}" class="text-decoration-none">Dashboard</a></li>
+                    <li class="breadcrumb-item active text-muted" aria-current="page">Profile</li>
+                </ol>
+            </nav>
+
+            <div class="modern-card">
+                <div class="text-center mb-4">
+                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+                        <i class="bi bi-person-gear fs-2"></i>
+                    </div>
+                    <h2 class="fw-bold mb-1">{% trans "Update Profile" %}</h2>
+                    <p class="text-muted">{% trans "Manage your contact information" %}</p>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-4 shadow-sm" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase text-muted">{% trans "Full Name" %}</label>
+                        <input type="text" class="form-control" value="{{ client.name }}" disabled readonly style="opacity: 0.7;">
+                        <div class="form-text">{% trans "Name usage is managed by the registry admin." %}</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="phone" class="form-label fw-bold small text-uppercase text-muted">{% trans "Phone Number" %}</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" value="{{ client.phone }}" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="email" class="form-label fw-bold small text-uppercase text-muted">{% trans "Email Address" %}</label>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ client.email }}" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="address" class="form-label fw-bold small text-uppercase text-muted">{% trans "Postal Address" %}</label>
+                        <textarea class="form-control" id="address" name="address" rows="3" required>{{ client.address }}</textarea>
+                    </div>
+
+                    <div class="d-grid gap-3">
+                        <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold">
+                            {% trans "Save Changes" %}
+                        </button>
+                        <a href="{% url 'insured_home' %}" class="btn btn-light btn-lg rounded-pill fw-bold text-muted">
+                            {% trans "Cancel" %}
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

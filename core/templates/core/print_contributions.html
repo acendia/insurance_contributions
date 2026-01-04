@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insurance Contribution History - {{ insured_name }}</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 12px;
+            color: #333;
+            line-height: 1.4;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 18px;
+            text-transform: uppercase;
+        }
+        .header p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .meta-info {
+            margin-bottom: 20px;
+        }
+        .meta-info table {
+            width: 100%;
+            border-collapse: collapse;
+            border: none;
+        }
+        .meta-info td {
+            padding: 5px;
+            border: none;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .data-table th, .data-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        .data-table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+        .footer {
+            text-align: center;
+            font-size: 10px;
+            color: #999;
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+        @media print {
+            .no-print { display: none; }
+            body { font-size: 10pt; }
+        }
+    </style>
+</head>
+<body onload="window.print()">
+
+    <div class="no-print" style="margin-bottom: 20px; text-align: center;">
+        <button onclick="window.print()" style="padding: 10px 20px; cursor: pointer;">Print / Save as PDF</button>
+        <button onclick="window.close()" style="padding: 10px 20px; cursor: pointer;">Close</button>
+    </div>
+
+    <div class="header">
+        <h1>Detailed Insurance Contribution History</h1>
+        <p>Generated on {{ print_date }}</p>
+    </div>
+
+    <div class="meta-info">
+        <table>
+            <tr>
+                <td style="width: 15%;"><strong>Insured Name:</strong></td>
+                <td style="width: 35%;">{{ insured_name }}</td>
+                <td style="width: 15%;"><strong>AMKA:</strong></td>
+                <td style="width: 35%;">{{ insured_id }}</td>
+            </tr>
+            <tr>
+                <td><strong>Period:</strong></td>
+                <td>{{ selected_year }}</td>
+                <td><strong>Source:</strong></td>
+                <td>Registry App</td>
+            </tr>
+        </table>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>From</th>
+                <th>To</th>
+                <th style="width: 60px;">Year</th>
+                <th style="width: 60px;">Month</th>
+                <th>Days</th>
+                <th>Type</th>
+                <th>Coverage</th>
+                <th>Gross Earnings</th>
+                <th>Contributions</th>
+                <th>Employer AME</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in contribution_history %}
+            <tr>
+                <td>{{ item.from }}</td>
+                <td>{{ item.to }}</td>
+                <td>{{ item.year }}</td>
+                <td>{{ item.month }}</td>
+                <td>{{ item.days }}</td>
+                <td>{{ item.earnings_type }}</td>
+                <td>{{ item.coverage_package }}</td>
+                <td>{{ item.gross_earnings|floatformat:2 }} €</td>
+                <td>{{ item.total_contributions|floatformat:2 }} €</td>
+                <td>{{ item.employer_ame }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8">No records found for this period.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <p>This document is for information purposes only. Not an official certificate.</p>
+    </div>
+
+</body>
+</html>

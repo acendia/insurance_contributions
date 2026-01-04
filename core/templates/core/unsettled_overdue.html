@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Unsettled Overdue (KEAO)" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.9);
+        --glass-border: rgba(255, 255, 255, 0.4);
+        --card-shadow: 0 12px 40px 0 rgba(239, 68, 68, 0.08);
+        --card-radius: 24px;
+        --keao-danger: #ef4444;
+    }
+
+    .modern-card {
+        border-radius: var(--card-radius);
+        border: 1px solid var(--glass-border);
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        padding: 2.5rem;
+        box-shadow: var(--card-shadow);
+        transition: all 0.3s ease;
+    }
+
+    .alert-banner {
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        border: 1px solid #fecaca;
+        border-radius: 16px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+    }
+
+    .icon-circle-large {
+        width: 64px;
+        height: 64px;
+        border-radius: 20px;
+        background: white;
+        color: var(--keao-danger);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-value {
+        font-size: 2.25rem;
+        font-weight: 800;
+        color: #1e293b;
+        letter-spacing: -0.02em;
+    }
+
+    .btn-settlement {
+        background: var(--keao-danger);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+        box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-settlement:hover {
+        background: #dc2626;
+        transform: translateY(-2px);
+        color: white;
+        box-shadow: 0 6px 20px 0 rgba(239, 68, 68, 0.4);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="mb-4">
+        <nav aria-label="breadcrumb" class="mb-2">
+            <ol class="breadcrumb mb-0 small uppercase fw-bold">
+                <li class="breadcrumb-item"><a href="{% url 'employer_home' %}" class="text-decoration-none">Dashboard</a></li>
+                <li class="breadcrumb-item active text-danger" aria-current="page">KEAO Unsettled</li>
+            </ol>
+        </nav>
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="display-6 fw-bold mb-1 text-danger">{% trans "Unsettled Overdue Debts" %}</h1>
+                <p class="text-muted mb-0">KEAO Enforcement Data: {{ company_name }}</p>
+            </div>
+            <a href="#" class="btn btn-settlement">
+                <i class="bi bi-file-earmark-plus me-2"></i>{% trans "New Settlement Application" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Banner -->
+    <div class="alert-banner">
+        <div class="icon-circle-large">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+        <div>
+            <h5 class="fw-bold mb-1 text-danger">{% trans "Immediate Action Required" %}</h5>
+            <p class="text-muted small mb-0">{% trans "The following debts have been transferred to KEAO and are subject to enforcement measures if not settled immediately." %}</p>
+        </div>
+    </div>
+
+    <!-- Summary Section -->
+    <div class="modern-card mb-5">
+        <div class="row align-items-center">
+            <div class="col-md-6 border-end">
+                <div class="stat-label">{% trans "Total Unsettled Amount" %}</div>
+                <div class="stat-value text-danger">{{ total_unsettled|floatformat:2 }} €</div>
+                <p class="text-muted small mt-2">{% trans "Includes principal and natural charges" %}</p>
+            </div>
+            <div class="col-md-6 ps-md-5">
+                <div class="stat-label">{% trans "Status" %}</div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="spinner-grow spinner-grow-sm text-danger" role="status"></div>
+                    <span class="fs-4 fw-bold text-dark">{% trans "Enforcement Active" %}</span>
+                </div>
+                <p class="text-muted small mt-2">{% trans "Last updated:" %} {% now "d/m/Y H:i" %}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statement Table -->
+    <div class="modern-card">
+        <h5 class="fw-bold mb-4">{% trans "Detailed Statement of Unsettled Debt" %}</h5>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead style="background: #f8fafc;">
+                    <tr class="text-muted small text-uppercase">
+                        <th class="border-0 px-4 py-3">{% trans "Period" %}</th>
+                        <th class="border-0 px-4 py-3">{% trans "Description" %}</th>
+                        <th class="border-0 px-4 py-3">{% trans "Type" %}</th>
+                        <th class="border-0 px-4 py-3">{% trans "Reference" %}</th>
+                        <th class="border-0 px-4 py-3 text-end">{% trans "Amount" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for debt in debts %}
+                    <tr>
+                        <td class="px-4 py-3 fw-bold">{{ debt.period }}</td>
+                        <td class="px-4 py-3 text-muted">{{ debt.description }}</td>
+                        <td class="px-4 py-3">
+                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">
+                                {{ debt.type }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3"><code class="small">{{ debt.reference }}</code></td>
+                        <td class="px-4 py-3 text-end fw-bold text-danger">{{ debt.amount|floatformat:2 }} €</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <i class="bi bi-shield-check text-success display-4 d-block mb-3"></i>
+                            <span class="text-muted">{% trans "No unsettled debts found for this employer." %}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
